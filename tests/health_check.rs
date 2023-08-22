@@ -1,12 +1,34 @@
 use std::net::TcpListener;
 
 use anyhow::Result;
+use once_cell::sync::Lazy;
+use secrecy::ExposeSecret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
 use zero2prod::{
     configuration::{get_configuration, DatabaseSettings},
     startup::run,
+    telemetry::{get_subscriber, init_subscriber},
 };
+
+static TRACING: Lazy<()> = Lazy::new(|| {
+    let default_filter_level = "info".into();
+    let subscriber_name = "test".into();
+
+    if std::env::var("TEST_LOG").is_ok() {
+        init_subscriber(get_subscriber(
+            subscriber_name,
+            default_filter_level,
+            std::io::stdout,
+        ));
+    } else {
+        init_subscriber(get_subscriber(
+            subscriber_name,
+            default_filter_level,
+            std::io::sink,
+        ));
+    };
+});
 
 pub struct TestApp {
     pub address: String,
@@ -14,6 +36,10 @@ pub struct TestApp {
 }
 
 async fn spawn_app() -> Result<TestApp> {
+    // The first time `initialize` is invoked the code in `TRACING` is executed.
+    // All other invocations will instead skip execution.
+    Lazy::force(&TRACING);
+
     let listener = TcpListener::bind("127.0.0.1:0")?;
     let port = listener.local_addr().unwrap().port();
 
@@ -31,12 +57,13 @@ async fn spawn_app() -> Result<TestApp> {
 }
 
 pub async fn configure_test_database(config: &DatabaseSettings) -> Result<PgPool> {
-    let mut connection = PgConnection::connect(&config.connection_string_without_db()).await?;
+    let mut connection =
+        PgConnection::connect(&config.connection_string_without_db().expose_secret()).await?;
     connection
         .execute(format!(r#"create database "{}""#, config.database_name).as_str())
         .await?;
 
-    let connection_pool = PgPool::connect(&config.connection_string()).await?;
+    let connection_pool = PgPool::connect(&config.connection_string().expose_secret()).await?;
 
     sqlx::migrate!("./migrations").run(&connection_pool).await?;
 

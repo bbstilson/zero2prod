@@ -11,11 +11,13 @@ cargo install \
   cargo-watch \       # reload/compile on save
   cargo-audit \       # security alerts
   cargo-expand \      # macro expansion
+  cargo-udeps \       # remove unused dependencies
   sccache             # better caching
 
-# For macro expansion
 rustup toolchain install nightly --allow-downgrade
+
 cargo +nightly expand
+cargo +nightly udeps
 
 # Migrations
 cargo install --version="~0.6" sqlx-cli --no-default-features --features rustls,postgres
