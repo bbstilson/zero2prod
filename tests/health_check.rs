@@ -2,7 +2,6 @@ use std::net::TcpListener;
 
 use anyhow::Result;
 use once_cell::sync::Lazy;
-use secrecy::ExposeSecret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
 use zero2prod::{
@@ -57,13 +56,13 @@ async fn spawn_app() -> Result<TestApp> {
 }
 
 pub async fn configure_test_database(config: &DatabaseSettings) -> Result<PgPool> {
-    let mut connection =
-        PgConnection::connect(&config.connection_string_without_db().expose_secret()).await?;
+    let mut connection = PgConnection::connect_with(&config.without_db()).await?;
+
     connection
         .execute(format!(r#"create database "{}""#, config.database_name).as_str())
         .await?;
 
-    let connection_pool = PgPool::connect(&config.connection_string().expose_secret()).await?;
+    let connection_pool = PgPool::connect_with(config.with_db()).await?;
 
     sqlx::migrate!("./migrations").run(&connection_pool).await?;
 
