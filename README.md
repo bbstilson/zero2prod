@@ -61,3 +61,10 @@ cargo sqlx prepare -- --lib
 * sqlx
 * lifetimes ('static / 'a)
 * trait bounds
+
+## Docker Build/Run
+
+```bash
+docker build --tag zero2prod --file Dockerfile .
+
+```
