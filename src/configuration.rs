@@ -6,7 +6,9 @@ use sqlx::{
     ConnectOptions,
 };
 
-#[derive(Deserialize)]
+use crate::domain::SubscriberEmail;
+
+#[derive(Deserialize, Clone)]
 pub struct DatabaseSettings {
     pub username: String,
     pub password: Secret<String>,
@@ -39,11 +41,12 @@ impl DatabaseSettings {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct ApplicationSettings {
     pub host: String,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
+    pub base_url: String,
 }
 
 impl ApplicationSettings {
@@ -52,10 +55,29 @@ impl ApplicationSettings {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
+pub struct EmailSettings {
+    pub base_url: String,
+    pub sender_email: String,
+    pub authorization_token: Secret<String>,
+    pub timeout_millis: u64,
+}
+
+impl EmailSettings {
+    pub fn sender(&self) -> Result<SubscriberEmail, ()> {
+        SubscriberEmail::parse(self.sender_email.clone())
+    }
+
+    pub fn timeout(&self) -> std::time::Duration {
+        std::time::Duration::from_millis(self.timeout_millis)
+    }
+}
+
+#[derive(Deserialize, Clone)]
 pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
+    pub email: EmailSettings,
 }
 
 pub enum Environment {

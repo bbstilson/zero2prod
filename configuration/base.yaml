@@ -1,8 +1,14 @@
 application:
   port: 8080
+  base_url: http://127.0.0.1
 database:
   username: postgres
   password: POSTGRES_PASSWORD
   host: "127.0.0.1"
   port: 5432
   database_name: newsletter
+email:
+  base_url: localhost
+  sender_email: "test@gmail.com"
+  authorization_token: supersecret
+  timeout_millis: 10000
