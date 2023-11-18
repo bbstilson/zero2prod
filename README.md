@@ -23,12 +23,6 @@ cargo +nightly udeps
 cargo install --version="~0.7" sqlx-cli --no-default-features --features rustls,postgres
 ```
 
-On Mac:
-
-```bash
-brew install michaeleisel/zld/zld
-```
-
 On Linux:
 
 ```bash
@@ -66,5 +60,4 @@ cargo sqlx prepare -- --lib
 
 ```bash
 docker build --tag zero2prod --file Dockerfile .
-
 ```
