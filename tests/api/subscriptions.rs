@@ -16,7 +16,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
         .mount(&app.email_server)
         .await;
 
-    let response = app.post_subscription(body.into()).await;
+    let response = app.post_subscriptions(body.into()).await;
 
     assert_eq!(200, response.status().as_u16());
 }
@@ -32,7 +32,7 @@ async fn subscribe_persists_the_new_subscriber() {
         .mount(&app.email_server)
         .await;
 
-    app.post_subscription(body.into()).await;
+    app.post_subscriptions(body.into()).await;
 
     let saved = sqlx::query!("select email, name, status from subscriptions",)
         .fetch_one(&app.db_pool)
@@ -55,7 +55,7 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
     ];
 
     for (invalid_body, error_message) in test_cases {
-        let response = app.post_subscription(invalid_body.into()).await;
+        let response = app.post_subscriptions(invalid_body.into()).await;
         assert_eq!(
             400,
             response.status().as_u16(),
@@ -77,7 +77,7 @@ async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
 
     for (body, description) in test_cases {
         // Act
-        let response = app.post_subscription(body.into()).await;
+        let response = app.post_subscriptions(body.into()).await;
 
         // Assert
         assert_eq!(
@@ -101,7 +101,7 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() {
         .mount(&app.email_server)
         .await;
 
-    app.post_subscription(body.into()).await;
+    app.post_subscriptions(body.into()).await;
 }
 
 #[tokio::test]
@@ -115,7 +115,7 @@ async fn subscribe_sends_a_confirmation_email_with_a_link() {
         .mount(&app.email_server)
         .await;
 
-    app.post_subscription(body.into()).await;
+    app.post_subscriptions(body.into()).await;
 
     let email_request = &app.email_server.received_requests().await.unwrap()[0];
     let links = app.get_confirmation_links(email_request);
