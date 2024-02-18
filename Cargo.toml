@@ -49,6 +49,7 @@ reqwest = { version = "0.11", default-features = false, features = [
 serde_json = { version = "1" }
 rand = { version = "0.8.5", features = ["std_rng"] }
 thiserror = "1.0.50"
+base64 = "0.21.7"
 
 [dev-dependencies]
 claims = "0.7"

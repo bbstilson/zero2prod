@@ -26,7 +26,7 @@ cargo install --version="~0.7" sqlx-cli --no-default-features --features rustls,
 On Linux:
 
 ```bash
-sudo apt install lld clang
+sudo apt install mold clang
 ```
 
 ## IDE Tooling
