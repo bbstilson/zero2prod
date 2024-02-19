@@ -50,6 +50,8 @@ serde_json = { version = "1" }
 rand = { version = "0.8.5", features = ["std_rng"] }
 thiserror = "1.0.50"
 base64 = "0.21.7"
+sha3 = "0.10.8"
+argon2 = { version = "0.5.3", features = ["std"] }
 
 [dev-dependencies]
 claims = "0.7"

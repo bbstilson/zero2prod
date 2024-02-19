@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -x
+#! /usr/bin bash
+# set -x
 set -eo pipefail
 
 if ! [ -x "$(command -v psql)" ]; then
