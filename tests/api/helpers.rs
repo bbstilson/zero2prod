@@ -117,6 +117,30 @@ impl TestApp {
     pub async fn get_admin_dashboard_html(&self) -> String {
         self.get_admin_dashboard().await.text().await.unwrap()
     }
+
+    pub async fn get_change_password(&self) -> reqwest::Response {
+        self.api_client
+            .get(&format!("{}/admin/password", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request")
+    }
+
+    pub async fn get_change_password_html(&self) -> String {
+        self.get_change_password().await.text().await.unwrap()
+    }
+
+    pub async fn post_change_password<Body: serde::Serialize>(
+        &self,
+        body: &Body,
+    ) -> reqwest::Response {
+        self.api_client
+            .post(&format!("{}/admin/password", &self.address))
+            .form(&body)
+            .send()
+            .await
+            .expect("Failed to execute request")
+    }
 }
 
 pub async fn spawn_app() -> TestApp {
@@ -194,8 +218,7 @@ impl TestUser {
         Self {
             user_id: Uuid::new_v4(),
             username: Uuid::new_v4().to_string(),
-            // password: Uuid::new_v4().to_string(),
-            password: "everythinghastostartsomewhere".into(),
+            password: Uuid::new_v4().to_string(),
         }
     }
 
@@ -209,8 +232,6 @@ impl TestUser {
         .hash_password(self.password.as_bytes(), &salt)
         .unwrap()
         .to_string();
-
-        dbg!(&password_hash);
 
         sqlx::query!(
             "insert into users (user_id, username, password_hash)
