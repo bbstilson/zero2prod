@@ -79,6 +79,7 @@ pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
     pub email: EmailSettings,
+    pub redis_uri: Secret<String>,
 }
 
 pub enum Environment {
