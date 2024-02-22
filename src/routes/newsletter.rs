@@ -11,7 +11,7 @@ use sqlx::PgPool;
 use tracing_log::log::error;
 
 use crate::{
-    auth::{validate_credentials, AuthError, Credentials},
+    authentication::{validate_credentials, AuthError, Credentials},
     domain::SubscriberEmail,
     email_client::EmailClient,
     routes::error_chain_fmt,
