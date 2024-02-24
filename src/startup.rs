@@ -59,7 +59,9 @@ async fn run(
                     .route("/logout", web::post().to(log_out))
                     .route("/dashboard", web::get().to(admin_dashboard))
                     .route("/password", web::get().to(change_password_form))
-                    .route("/password", web::post().to(change_password)),
+                    .route("/password", web::post().to(change_password))
+                    .route("/newsletters", web::get().to(publish_newsletter_form))
+                    .route("/newsletters", web::post().to(publish_newsletter)),
             )
             .app_data(db_pool.clone())
             .app_data(email_client.clone())
