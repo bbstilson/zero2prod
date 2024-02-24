@@ -1,6 +1,6 @@
 use actix_web::{body::to_bytes, HttpResponse};
 use reqwest::StatusCode;
-use sqlx::{postgres::PgHasArrayType, PgPool};
+use sqlx::{postgres::PgHasArrayType, PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
 use super::IdempotencyKey;
@@ -26,9 +26,9 @@ pub async fn get_saved_response(
     let saved_response = sqlx::query!(
         r#"
         select
-            response_status_code,
-            response_headers as "response_headers: Vec<HeaderPairRecord>",
-            response_body
+            response_status_code as "response_status_code!",
+            response_headers as "response_headers!: Vec<HeaderPairRecord>",
+            response_body as "response_body!"
         from idempotency
         where user_id = $1
         and idempotency_key = $2
@@ -52,7 +52,7 @@ pub async fn get_saved_response(
 }
 
 pub async fn save_response(
-    pool: &PgPool,
+    mut tx: Transaction<'static, Postgres>,
     idempotency_key: &IdempotencyKey,
     user_id: Uuid,
     http_response: HttpResponse,
@@ -72,14 +72,13 @@ pub async fn save_response(
 
     sqlx::query_unchecked!(
         r#"
-        insert into idempotency (
-            user_id,
-            idempotency_key,
-            response_status_code,
-            response_headers,
-            response_body,
-            created_at
-        ) values ($1, $2, $3, $4, $5, now())
+        update idempotency
+        set
+            response_status_code = $3,
+            response_headers = $4,
+            response_body = $5 
+        where user_id = $1
+        and idempotency_key = $2
         "#,
         user_id,
         idempotency_key.as_ref(),
@@ -87,9 +86,49 @@ pub async fn save_response(
         headers,
         body.as_ref()
     )
-    .execute(pool)
+    .execute(tx.as_mut())
     .await?;
+
+    tx.commit().await?;
 
     let http_response = response_head.set_body(body).map_into_boxed_body();
     Ok(http_response)
+}
+
+pub enum NextAction {
+    StartProcessing(Transaction<'static, Postgres>),
+    ReturnSavedResponse(HttpResponse),
+}
+
+pub async fn try_processing(
+    pool: &PgPool,
+    idempotency_key: &IdempotencyKey,
+    user_id: Uuid,
+) -> Result<NextAction, anyhow::Error> {
+    let mut tx = pool.begin().await?;
+    let n_inserted_rows = sqlx::query!(
+        r#"
+        insert into idempotency (
+            user_id,
+            idempotency_key,
+            created_at
+        ) values ($1, $2, now())
+        on conflict do nothing
+        "#,
+        user_id,
+        idempotency_key.as_ref()
+    )
+    .execute(tx.as_mut())
+    .await?
+    .rows_affected();
+
+    if n_inserted_rows > 0 {
+        Ok(NextAction::StartProcessing(tx))
+    } else {
+        let saved_response = get_saved_response(pool, idempotency_key, user_id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("We expected a saved response, we didn't find it"))?;
+
+        Ok(NextAction::ReturnSavedResponse(saved_response))
+    }
 }
