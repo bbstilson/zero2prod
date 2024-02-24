@@ -88,14 +88,7 @@ pub struct Application {
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self> {
         let connection_pool = get_connection_pool(&configuration.database);
-        let sender_email = configuration.email.sender().expect("Invalid sender email");
-        let timeout = configuration.email.timeout();
-        let email_client = EmailClient::new(
-            configuration.email.base_url,
-            sender_email,
-            configuration.email.authorization_token,
-            timeout,
-        );
+        let email_client = configuration.email.client();
 
         let listener = TcpListener::bind(configuration.application.address())?;
         let port = listener.local_addr().unwrap().port();

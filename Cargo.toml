@@ -61,6 +61,7 @@ hex = "0.4.3"
 actix-web-flash-messages = { version = "0.4.2", features = ["cookies"] }
 actix-session = { version = "0.7.0", features = ["redis-rs-tls-session"] }
 actix-web-lab = "0.20.2"
+serde_urlencoded = "0.7.1"
 
 [dev-dependencies]
 claims = "0.7"
